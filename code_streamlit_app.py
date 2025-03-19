@@ -6,6 +6,7 @@ import networkx as nx
 import numpy as np
 from itertools import product
 import streamlit as st
+import random
 
 # Preprocessing and Vectorization
 def preprocess_and_vectorize(data, max_features=3000):
