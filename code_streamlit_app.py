@@ -8,13 +8,13 @@ from itertools import product
 import streamlit as st
 
 # Preprocessing and Vectorization
-def preprocess_and_vectorize(data, max_features=5000):
+def preprocess_and_vectorize(data, max_features=3000):
     vectorizer = TfidfVectorizer(stop_words='english', max_features=max_features)
     tfidf_matrix = vectorizer.fit_transform(data)
     return tfidf_matrix, vectorizer
 
 # Apply LSA for dimensionality reduction
-def apply_lsa(tfidf_matrix, n_components=50):
+def apply_lsa(tfidf_matrix, n_components=30):
     n_components = min(n_components, tfidf_matrix.shape[1])  # Ensure n_components <= n_features
     svd = TruncatedSVD(n_components=n_components)
     lsa_matrix = svd.fit_transform(tfidf_matrix)
@@ -67,7 +67,7 @@ def build_multidigraph_and_pagerank(title_lsa, resume_lsa, job_lsa, candidate_lo
 
 # Calculate recommendations for all resumes for a parameter combination
 def calculate_pagerank_for_params(resume_dataset, job_titles, job_descriptions, job_tags, job_locations,
-                                  similarity_threshold, expertise_weight, resume_weight, location_weight, lsa_components=50):
+                                  similarity_threshold, expertise_weight, resume_weight, location_weight, lsa_components=30):
     total_pagerank_score = 0
 
     for _, row in resume_dataset.iterrows():
@@ -108,18 +108,28 @@ def calculate_pagerank_for_params(resume_dataset, job_titles, job_descriptions, 
 
 # Find the best parameters
 def find_best_hyperparameters(resume_dataset, job_titles, job_descriptions, job_tags, job_locations,
-                              thresholds, expertise_weights, resume_weights, location_weights, lsa_components=50):
+                              thresholds, expertise_weights, location_weights, lsa_components=30):
+    num_iterations = 10  # Số lần chạy thử nghiệm ngẫu nhiên
     best_params = None
     best_score = -np.inf
     results = []
 
     # Iterate through all combinations of hyperparameters
-    for similarity_threshold, expertise_weight, resume_weight, location_weight in product(thresholds, expertise_weights, resume_weights, location_weights):
+    for _ in range(num_iterations):
+        similarity_threshold = random.choice(thresholds)
+        expertise_weight = random.choice(expertise_weights)
+        location_weight = random.choice(location_weights)
+        resume_weight = 1 - expertise_weight
+
         print(f"Evaluating similarity_threshold={similarity_threshold}, expertise_weight={expertise_weight}, resume_weight={resume_weight}, location_weight={location_weight}...")
+        
         score = calculate_pagerank_for_params(
             resume_dataset, job_titles, job_descriptions, job_tags, job_locations,
             similarity_threshold, expertise_weight, resume_weight, location_weight, lsa_components
         )
+
+        print(f"Total PageRank Score: {score}\n")
+        
         results.append((similarity_threshold, expertise_weight, resume_weight, location_weight, score))
 
         if score > best_score:
@@ -129,7 +139,7 @@ def find_best_hyperparameters(resume_dataset, job_titles, job_descriptions, job_
     return best_params, results
 
 def recommend_top_jobs_for_candidate(row, job_company_name, job_titles, job_descriptions, job_tags, job_locations,
-                                     best_params, lsa_components=50, top_k=10):
+                                     best_params, lsa_components=30, top_k=10):
     # Extract candidate details
     title = row['Category']
     resume = row['Resume']
@@ -181,7 +191,7 @@ def recommend_top_jobs_for_candidate(row, job_company_name, job_titles, job_desc
     return recommendations
 
 # Recommend jobs for all candidates
-def recommend_jobs_for_all_candidates(resume_dataset, job_company_name, job_titles, job_descriptions, job_tags, job_locations, best_params, lsa_components=50, top_k=10):
+def recommend_jobs_for_all_candidates(resume_dataset, job_company_name, job_titles, job_descriptions, job_tags, job_locations, best_params, lsa_components=30, top_k=10):
     all_recommendations = []
 
     for _, row in resume_dataset.iterrows():
@@ -222,7 +232,7 @@ job_tags = jobs_data['tag_list'].astype(str).tolist()
 job_locations = jobs_data['location_new'].astype(str).tolist()
 
 # Best parameters from hyperparameter tuning
-best_params = (0.5, 0.6, 0.3, 0.1)  # Replace with the actual best parameters
+best_params = (0.3, 0.7, 0.3, 0.9)  # Replace with the actual best parameters (similarity_threshold, expertise_weight, resume_weight, location_weight)
 
 if st.button("Recommend Jobs"):
     # Run recommendations
@@ -230,7 +240,7 @@ if st.button("Recommend Jobs"):
     recommendations_data = []
     recommendations = recommend_jobs_for_all_candidates(
         resume_dataset, job_company_name, job_titles, job_descriptions, job_tags, job_locations,
-        best_params, lsa_components=50, top_k=10
+        best_params, lsa_components=30, top_k=10
     )
 
     # Display recommendations
