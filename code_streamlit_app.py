@@ -209,7 +209,7 @@ def recommend_jobs_for_all_candidates(resume_dataset, job_company_name, job_titl
     return all_recommendations
 
 # Streamlit Web App
-st.title("Job Recommendation System - V190320250001")
+st.title("Job Recommendation System")
 
 # Sidebar for candidate input
 st.sidebar.header("Candidate Input")
@@ -233,7 +233,7 @@ job_tags = jobs_data['tag_list'].astype(str).tolist()
 job_locations = jobs_data['location_new'].astype(str).tolist()
 
 # Best parameters from hyperparameter tuning
-best_params = (0.3, 0.7, 0.3, 0.9)  # Replace with the actual best parameters (similarity_threshold, expertise_weight, resume_weight, location_weight)
+best_params = (0.5, 0.6, 0.3, 0.1)  # Replace with the actual best parameters (similarity_threshold, expertise_weight, resume_weight, location_weight)
 
 if st.button("Recommend Jobs"):
     # Run recommendations
