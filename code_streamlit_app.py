@@ -211,11 +211,14 @@ def recommend_jobs_for_all_candidates(resume_dataset, job_company_name, job_titl
 # Streamlit Web App
 st.title("Job Recommendation System")
 
+# List of options
+options = ["Hà Nội", "Đà Nẵng", "Hồ Chí Minh"]
+
 # Sidebar for candidate input
 st.sidebar.header("Candidate Input")
 candidate_category = st.sidebar.text_input("Candidate Category", "Data Scientist")
 candidate_resume = st.sidebar.text_area("Candidate Resume", "Experienced in Python, ML, and data analysis...")
-candidate_location = st.sidebar.text_input("Candidate Location", "Ho Chi Minh")
+candidate_location = st.sidebar.selectbox("Candidate Location:", options)
 
 resume_dataset = pd.DataFrame([
 {
@@ -261,4 +264,4 @@ if st.button("Recommend Jobs"):
 
     # Display the recommendations DataFrame in Streamlit
     st.write("### Top 10 Job Recommendations for All Candidates")
-    st.dataframe(recommendations_df)
+    st.table(recommendations_df)
