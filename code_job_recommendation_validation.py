@@ -8,6 +8,7 @@ from itertools import product
 import streamlit as st
 import random
 import ast
+import matplotlib.pyplot as plt
 
 # Preprocessing and Vectorization
 def preprocess_and_vectorize(data, max_features=5000):
@@ -251,38 +252,57 @@ if __name__ == "__main__":
     # Best parameters from hyperparameter tuning
     best_params = (0.5, 0.6, 0.3, 0.1)  # Replace with the actual best parameters (similarity_threshold, expertise_weight, resume_weight, location_weight)
 
-    top_k = 5  # Number of top job recommendations to return
+    max_k = 20
+    precision_at_k = []
+    recall_at_k = []
 
-    # Get top 10 job recommendations for all candidates
-    recommendations = recommend_jobs_for_all_candidates(
-        resume_dataset, job_company_name, job_titles, job_descriptions, job_tags, job_locations,
-        best_params, lsa_components=50, top_k=top_k
-    )
+    for top_k in range(1, max_k + 1):
+        # Get top 10 job recommendations for all candidates
+        recommendations = recommend_jobs_for_all_candidates(
+            resume_dataset, job_company_name, job_titles, job_descriptions, job_tags, job_locations,
+            best_params, lsa_components=50, top_k=top_k
+        )
 
-    list_precision = []
-    list_recall = []
+        list_precision = []
+        list_recall = []
 
-    # Display recommendations
-    for rec in recommendations:
-        recommended_jobs = []  # Kết quả hệ thống gợi ý (hệ thống đã recommend cho ứng viên)
-        actual_applied_jobs = set(ast.literal_eval(rec['actual_applied_jobs']))  # R jobs (ứng viên đã apply)
-        print(f"Candidate Title: {rec['candidate_title']} (Location: {rec['candidate_location']})")
-        print(f"Top {top_k} Job Recommendations:")
-        for job in rec['recommendations']:
-            # print(job)
-            print(f"  - Company Name: {job[0]}, Job Title: {job[1].lower()}, Location: {(job[3])}, PageRank Score: {job[5]:.4f}")
-            # print(f"  - Job Title: {job[0]}, Location: {(job[2])}, PageRank Score: {job[4]:.4f}")
-            recommended_jobs.append(job[1].lower())
-        
-        precision, recall = evaluate_recommendation_precision_recall(actual_applied_jobs, recommended_jobs, top_k)
-        list_precision.append(precision)
-        list_recall.append(recall)
-        print(f"Precision: {precision:.2f}")
-        print(f"Recall: {recall:.2f}")
-        print("\n")
+        # Display recommendations
+        for rec in recommendations:
+            recommended_jobs = []  # Kết quả hệ thống gợi ý (hệ thống đã recommend cho ứng viên)
+            actual_applied_jobs = set(ast.literal_eval(rec['actual_applied_jobs']))  # R jobs (ứng viên đã apply)
+            # print(f"Candidate Title: {rec['candidate_title']} (Location: {rec['candidate_location']})")
+            # print(f"Top {top_k} Job Recommendations:")
+            for job in rec['recommendations']:
+                # print(f"  - Company Name: {job[0]}, Job Title: {job[1].lower()}, Location: {(job[3])}, PageRank Score: {job[5]:.4f}")
+                recommended_jobs.append(job[1].lower())
+            
+            precision, recall = evaluate_recommendation_precision_recall(actual_applied_jobs, recommended_jobs, top_k)
+            list_precision.append(precision)
+            list_recall.append(recall)
+            # print(f"Precision: {precision:.2f}")
+            # print(f"Recall: {recall:.2f}")
+            # print("\n")
 
-    # Calculate average precision and recall
-    avg_precision = np.mean(list_precision)
-    avg_recall = np.mean(list_recall)
-    print(f"Average Precision: {avg_precision:.2f}")
-    print(f"Average Recall: {avg_recall:.2f}")
+        # Calculate average precision and recall
+        avg_precision = np.mean(list_precision)
+        avg_recall = np.mean(list_recall)
+        print(f"Average Precision: {avg_precision:.2f}")
+        print(f"Average Recall: {avg_recall:.2f}")
+
+        precision_at_k.append(avg_precision)
+        recall_at_k.append(avg_recall)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, max_k + 1), precision_at_k, marker='o', label='Precision')
+    plt.plot(range(1, max_k + 1), recall_at_k, marker='s', label='Recall')
+    plt.xlabel('K (Top-K Recommendations)')
+    plt.ylabel('Score')
+    plt.title('Precision and Recall at Different Top-K Values')
+    plt.legend()
+    plt.grid(True)
+
+    # 👉 Scale trục X theo số nguyên
+    plt.xticks(range(1, max_k + 1))  
+    
+    plt.tight_layout()
+    plt.show()
